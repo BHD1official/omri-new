@@ -1,8 +1,12 @@
+import { defineConfig } from 'vite'
+import react from '@vitejs/plugin-react'
+import tailwindcss from '@tailwindcss/vite'
+import path from 'path'
+
 export default defineConfig({
   base: "/omri-new/",
 
   plugins: [
-    figmaAssetResolver(),
     react(),
     tailwindcss(),
   ],
@@ -12,13 +16,4 @@ export default defineConfig({
       '@': path.resolve(__dirname, './src'),
     },
   },
-
-  assetsInclude: [
-    '**/*.svg',
-    '**/*.csv',
-    '**/*.png',
-    '**/*.jpg',
-    '**/*.jpeg',
-    '**/*.webp',
-  ],
 })
