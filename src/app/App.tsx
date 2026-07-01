@@ -17,58 +17,187 @@ const SLIDE3_TEXTS = [
 ];
 
 // ===== הגדרות =====
-const TYPING_SPEED = 55;
+const TYPING_SPEED = 120;
 const PROGRESS_MIN = 9;
 const PROGRESS_MAX = 309;
 
 type Screen = "intro" | "slide1" | "slide2" | "slide3" | "about";
 
+
+
+
+
 // ===== Hook: אפקט טייפרייטר =====
 function useTypewriter(texts: string[], active: boolean) {
+
   const [totalTyped, setTotalTyped] = useState(0);
+  const [paused, setPaused] = useState(false);
+
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
-  const totalChars = texts.reduce((sum, t) => sum + t.length, 0);
+
+  const totalChars = texts.reduce(
+    (sum, t) => sum + t.length,
+    0
+  );
+
 
   useEffect(() => {
-    setTotalTyped(0);
-    if (!active) return;
+
+    if (!active || paused) return;
+
+
     intervalRef.current = setInterval(() => {
-      setTotalTyped((prev) => {
-        if (prev >= totalChars) { clearInterval(intervalRef.current!); return prev; }
+
+      setTotalTyped(prev => {
+
+        if(prev >= totalChars){
+
+          clearInterval(intervalRef.current!);
+
+          return prev;
+        }
+
+
         return prev + 1;
+
       });
+
+
     }, TYPING_SPEED);
-    return () => { if (intervalRef.current) clearInterval(intervalRef.current); };
-  }, [active, totalChars]);
+
+
+    return () => {
+
+      if(intervalRef.current)
+        clearInterval(intervalRef.current);
+
+    };
+
+
+  }, [active, paused,totalChars]);
+
+
 
   let remaining = totalTyped;
-  const displayed = texts.map((t) => {
-    const take = Math.min(remaining, t.length);
+
+
+  const displayed = texts.map(t=>{
+
+    const take = Math.min(
+      remaining,
+      t.length
+    );
+
     remaining -= take;
-    return t.slice(0, take);
+
+    return t.slice(0,take);
+
   });
 
+
+
   return {
+
     displayed,
-    progress: totalChars > 0 ? totalTyped / totalChars : 0,
-    done: totalTyped >= totalChars,
+
+    progress:
+      totalChars
+      ? totalTyped / totalChars
+      : 0,
+
+    done:
+      totalTyped >= totalChars,
+
+
+    pause:()=>setPaused(true),
+
+    resume:()=>setPaused(false)
+
   };
+
 }
+
+
+
+
 
 // ===== רכיב: פס התקדמות =====
-function ProgressBar({ progress }: { progress: number }) {
-  const fillWidth = PROGRESS_MIN + (PROGRESS_MAX - PROGRESS_MIN) * Math.min(1, Math.max(0, progress));
-  return (
-    <div className="absolute top-[86px] left-1/2 -translate-x-1/2 w-[319px] h-[15px]">
-      <div className="absolute inset-0 bg-[#fffff6] rounded-[20px]" />
-      <div
-        className="absolute top-[2.5px] left-0 h-[10px] bg-[#f0e0bf] rounded-[13.417px]"
-        style={{ width: `${fillWidth}px`, transition: `width ${TYPING_SPEED}ms linear` }}
-      />
-    </div>
-  );
+function ProgressBar({
+  progress,
+  current
+}:{
+  progress:number;
+  current:number;
+}) {
+
+
+return (
+
+<div
+className="
+absolute top-[86px]
+left-1/2
+-translate-x-1/2
+flex gap-2
+w-[319px]
+h-[10px]
+"
+dir="rtl"
+>
+
+
+{
+[0,1,2].map((i)=>(
+
+
+<div
+key={i}
+className="
+flex-1
+bg-[#fffff6]
+rounded-full
+overflow-hidden
+"
+>
+
+
+<div
+
+className="
+h-full
+bg-[#f0e0bf]
+transition-all
+origin-right
+"
+
+style={{
+width:
+i < current
+? "100%"
+:
+i === current
+? `${progress*100}%`
+:
+"0%"
+}}
+
+/>
+
+
+</div>
+
+
+))
+
 }
 
+
+</div>
+
+
+)
+
+}
 // ===== רכיב: תמונת עיצוב תחתונה =====
 function BgDecor() {
   return (
@@ -122,7 +251,13 @@ function NextButton({ onClick, disabled = false }: { onClick: () => void; disabl
 
 // ===== רכיב: רקע =====
 function Bg() {
-  return <img alt="" className="absolute inset-0 max-w-none object-cover pointer-events-none size-full" src={bgImg} />;
+  return (
+    <img
+      alt=""
+      className="fixed inset-0 w-full h-full object-cover pointer-events-none -z-10"
+      src={bgImg}
+    />
+  );
 }
 
 // ===== מסך: פתיח =====
@@ -175,11 +310,28 @@ function IntroScreen({ onStart }: { onStart: () => void }) {
 
 // ===== מסך: משפט ראשון =====
 function Slide1({ onNext }: { onNext: () => void }) {
-  const { displayed, progress, done } = useTypewriter(SLIDE1_TEXTS, true);
+const { 
+ displayed,
+ progress,
+ done,
+ pause,
+ resume
+} = useTypewriter(SLIDE1_TEXTS,true);
   return (
-    <div className="relative size-full">
-      <Bg />
-      <ProgressBar progress={progress} />
+<div
+className="relative size-full"
+onMouseDown={pause}
+onMouseUp={resume}
+onMouseLeave={resume}
+onTouchStart={pause}
+onTouchEnd={resume}
+>
+        <Bg />
+<ProgressBar 
+progress={progress}
+current={0}
+/>
+
       <QuoteCard top={148} height={284} />
       <OpeningQuote top={178.28} />
       <p
@@ -202,11 +354,29 @@ function Slide1({ onNext }: { onNext: () => void }) {
 
 // ===== מסך: משפט שני =====
 function Slide2({ onNext }: { onNext: () => void }) {
-  const { displayed, progress, done } = useTypewriter(SLIDE2_TEXTS, true);
-  return (
-    <div className="relative size-full">
-      <Bg />
-      <ProgressBar progress={progress} />
+const { 
+ displayed,
+ progress,
+ done,
+ pause,
+ resume
+} = useTypewriter(SLIDE2_TEXTS,true); 
+
+return (
+<div
+className="relative size-full"
+onMouseDown={pause}
+onMouseUp={resume}
+onMouseLeave={resume}
+onTouchStart={pause}
+onTouchEnd={resume}
+>
+  
+        <Bg />
+<ProgressBar 
+progress={progress}
+current={1}
+/>
       <QuoteCard top={148} height={251} />
       <OpeningQuote top={178.28} />
       <p
@@ -243,11 +413,28 @@ function Slide2({ onNext }: { onNext: () => void }) {
 
 // ===== מסך: משפט שלישי =====
 function Slide3({ onNext }: { onNext: () => void }) {
-  const { displayed, progress, done } = useTypewriter(SLIDE3_TEXTS, true);
-  return (
-    <div className="relative size-full">
-      <Bg />
-      <ProgressBar progress={progress} />
+const { 
+ displayed,
+ progress,
+ done,
+ pause,
+ resume
+} = useTypewriter(SLIDE1_TEXTS,true);
+
+return (
+<div
+className="relative size-full"
+onMouseDown={pause}
+onMouseUp={resume}
+onMouseLeave={resume}
+onTouchStart={pause}
+onTouchEnd={resume}
+>
+        <Bg />
+<ProgressBar 
+progress={progress}
+current={2}
+/>
       <QuoteCard top={148} height={564} />
       <OpeningQuote top={178.28} />
       <p
@@ -300,11 +487,9 @@ export default function App() {
     about: <AboutScreen />,
   };
 
-  return (
-    <div className="min-h-screen bg-[#2a2a2a] flex items-center justify-center">
-      <div className="rounded-[40px] shadow-2xl overflow-hidden relative" style={{ width: "390px", height: "844px" }}>
+return (
+  <div className="min-h-screen w-full overflow-hidden relative">
         {screens[screen]}
-      </div>
-    </div>
-  );
+          </div>
+);
 }
