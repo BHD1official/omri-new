@@ -29,6 +29,10 @@ jobs:
       url: ${{ steps.deployment.outputs.page_url }}
     runs-on: ubuntu-latest
     steps:
+      - name: Install dependencies
+        run: npm install
+      - name: Build
+        run: npm run build
       - name: Checkout
         uses: actions/checkout@v4
       - name: Setup Pages
